@@ -9,21 +9,21 @@
   --bg:#f6f7f9; --card:#ffffff; --text:#1c1f24; --muted:#5f6670; --line:#dde1e6;
   --accent:#2457c5; --accent-weak:#e8eefb;
   --new:#1e7d4f; --new-bg:#e5f4ec; --miss:#b4361f; --miss-bg:#fbe9e5;
-  --warn:#8a5a00; --warn-bg:#fdf3dc; --same:#4a5260; --same-bg:#eef0f3;
+  --warn:#8a5a00; --warn-bg:#fdf3dc; --chg:#6b3fa0; --chg-bg:#f1eafa; --same:#4a5260; --same-bg:#eef0f3;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#15171b; --card:#1e2127; --text:#e6e8eb; --muted:#9aa2ad; --line:#2f343c;
     --accent:#7aa2ff; --accent-weak:#243150;
     --new:#5fd39a; --new-bg:#17352a; --miss:#ff8a72; --miss-bg:#3d2019;
-    --warn:#f0c060; --warn-bg:#3a2f14; --same:#b7bec8; --same-bg:#2a2e35;
+    --warn:#f0c060; --warn-bg:#3a2f14; --chg:#c8a6f5; --chg-bg:#30243f; --same:#b7bec8; --same-bg:#2a2e35;
   }
 }
 :root[data-theme="dark"]{
   --bg:#15171b; --card:#1e2127; --text:#e6e8eb; --muted:#9aa2ad; --line:#2f343c;
   --accent:#7aa2ff; --accent-weak:#243150;
   --new:#5fd39a; --new-bg:#17352a; --miss:#ff8a72; --miss-bg:#3d2019;
-  --warn:#f0c060; --warn-bg:#3a2f14; --same:#b7bec8; --same-bg:#2a2e35;
+  --warn:#f0c060; --warn-bg:#3a2f14; --chg:#c8a6f5; --chg-bg:#30243f; --same:#b7bec8; --same-bg:#2a2e35;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);
@@ -32,14 +32,27 @@ body{margin:0;background:var(--bg);color:var(--text);
 h1{font-size:22px;margin:0 0 4px}
 .sub{color:var(--muted);margin:0 0 16px}
 .notice{background:var(--accent-weak);border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:18px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:720px){.grid{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.meta{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px}
+@media (max-width:720px){.grid,.meta{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card + .card{margin-top:0}
+.mb{margin-bottom:16px}
 .card h2{font-size:15px;margin:0 0 2px}
 .card p{margin:0 0 8px;color:var(--muted);font-size:13px}
-textarea{width:100%;height:220px;resize:vertical;border:1px solid var(--line);border-radius:6px;
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+input[type=text]{width:100%;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--text);padding:6px 8px}
+textarea{width:100%;height:200px;resize:vertical;border:1px solid var(--line);border-radius:6px;
   background:var(--bg);color:var(--text);padding:8px;font-family:Consolas,"D2Coding",monospace;font-size:13px}
+.plist{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+.plist:first-child{border-top:0;padding-top:0;margin-top:0}
+.plist-head{display:flex;gap:6px;margin-bottom:6px}
+.plist-head input{flex:1;font-weight:600}
+.plist-head button{padding:4px 10px;font-size:13px}
+#prevLists .plist textarea{height:160px}
 .count{font-size:12.5px;color:var(--muted);margin-top:4px;min-height:1.2em}
+.add{margin-top:10px;width:100%;border-style:dashed;color:var(--accent)}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0}
 button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--text);
   border-radius:6px;padding:7px 14px;cursor:pointer}
@@ -48,14 +61,19 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 :root[data-theme="dark"] button.primary{color:#0d1220}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.primary{color:#0d1220}}
 label.opt{font-size:13.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
-.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
-@media (max-width:720px){.summary{grid-template-columns:repeat(2,1fr)}}
+.report{border-left:4px solid var(--accent)}
+.report-text{margin:6px 0 10px;font-size:14.5px;line-height:1.7}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0}
+@media (max-width:720px){.summary{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:420px){.summary{grid-template-columns:repeat(2,1fr)}}
 .stat{border-radius:8px;padding:10px 12px;cursor:pointer;border:2px solid transparent}
 .stat.on{border-color:currentColor}
 .stat b{display:block;font-size:24px;line-height:1.2}
 .stat span{font-size:12.5px}
 .s-new{background:var(--new-bg);color:var(--new)}
 .s-miss{background:var(--miss-bg);color:var(--miss)}
+.s-chg{background:var(--chg-bg);color:var(--chg)}
 .s-warn{background:var(--warn-bg);color:var(--warn)}
 .s-same{background:var(--same-bg);color:var(--same)}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -72,6 +90,23 @@ td.empty{color:var(--muted);text-align:center;padding:20px}
 details{margin-top:24px;color:var(--muted);font-size:13.5px}
 details summary{cursor:pointer}
 #result{display:none}
+#printArea{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:11pt}
+  .wrap > *:not(#printArea), .toast{display:none !important}
+  .wrap{max-width:none;padding:0}
+  #printArea{display:block}
+  #printArea h1{font-size:16pt;margin:0 0 8px}
+  #printArea h2{font-size:12pt;margin:16px 0 4px}
+  #printArea .pmeta td{border:0;padding:1px 12px 1px 0}
+  #printArea .pmeta td:first-child{color:#555}
+  #printArea .preport{border:1px solid #999;padding:8px 10px;margin:10px 0;line-height:1.6}
+  #printArea table.ptbl th,#printArea table.ptbl td{border:1px solid #999;padding:3px 6px;white-space:normal;position:static;background:#fff}
+  #printArea table.ptbl th{background:#eee}
+  #printArea .pnone{color:#555;margin:0}
+  #printArea section{break-inside:auto}
+  #printArea h2{break-after:avoid}
+}
 </style>
 </head>
 <body>
@@ -80,12 +115,21 @@ details summary{cursor:pointer}
   <p class="sub">엑셀에서 <b>사번 · 성명</b> 두 열만 복사해 붙여넣으면, 이전 명단과 현재 명단의 차이를 자동으로 찾아줍니다.</p>
   <div class="notice">🔒 입력한 명단은 <b>이 브라우저 안에서만</b> 처리됩니다. 서버로 전송되거나 저장되지 않으며, 창을 닫으면 사라집니다.</div>
 
+  <div class="card mb">
+    <h2>교육 정보 <span style="font-weight:400;color:var(--muted);font-size:13px">(선택 · 보고용 요약과 인쇄물에 표시됩니다)</span></h2>
+    <div class="meta" style="margin-top:8px">
+      <div class="field"><label for="company">회사명</label><input type="text" id="company" placeholder="예: ○○제분"></div>
+      <div class="field"><label for="eduName">교육명</label><input type="text" id="eduName" placeholder="예: 직장 내 성희롱 예방교육"></div>
+      <div class="field"><label for="eduPeriod">기간·차수</label><input type="text" id="eduPeriod" placeholder="예: 2026년 하반기"></div>
+    </div>
+  </div>
+
   <div class="grid">
     <div class="card">
       <h2>① 기준 명단 (이전 분기·상반기 수강자)</h2>
-      <p>엑셀에서 사번·성명 열을 선택 → 복사(Ctrl+C) → 여기에 붙여넣기(Ctrl+V)</p>
-      <textarea id="prev" spellcheck="false" placeholder="사번&#9;성명&#10;10231&#9;홍길동&#10;10232&#9;김철수"></textarea>
-      <div class="count" id="prevCount"></div>
+      <p>명단이 여러 개면 "＋ 기준 명단 추가"로 나눠 붙여넣으세요. 합쳐서 비교합니다.</p>
+      <div id="prevLists"></div>
+      <button class="add" id="addPrev">＋ 기준 명단 추가</button>
     </div>
     <div class="card">
       <h2>② 비교 명단 (이번 교육 대상자)</h2>
@@ -97,18 +141,24 @@ details summary{cursor:pointer}
 
   <div class="bar">
     <button class="primary" id="run">검증하기</button>
-    <button id="swap">① ↔ ② 바꾸기</button>
+    <button id="swap">첫 기준 ↔ ② 바꾸기</button>
     <button id="clear">모두 지우기</button>
     <button id="sample">예시 넣기</button>
     <label class="opt"><input type="checkbox" id="optZero" checked> 사번 앞자리 0 무시 (엑셀에서 0이 빠진 경우)</label>
   </div>
 
   <section id="result">
+    <div class="card report">
+      <div class="panel-head"><h3>보고용 요약</h3>
+        <div class="btns"><button id="copyReport">요약 복사</button><button id="print">인쇄 / PDF 저장</button></div>
+      </div>
+      <p class="report-text" id="report"></p>
+    </div>
     <div class="summary" id="summary"></div>
     <div class="card">
       <div class="panel-head">
         <h3 id="pTitle"></h3>
-        <div style="display:flex;gap:8px">
+        <div class="btns">
           <button id="copy">엑셀용 복사</button>
           <button id="csv">CSV 저장</button>
         </div>
@@ -123,10 +173,13 @@ details summary{cursor:pointer}
     <ul>
       <li>첫 줄이 "사번 / 성명" 같은 머리글이면 자동으로 건너뜁니다.</li>
       <li>사번을 기준으로 비교합니다. 같은 사번인데 이름이 다르면 <b>성명 불일치</b>로 따로 표시합니다.</li>
+      <li>사번은 다르지만 이름이 같은 누락·신규 인원은 <b>사번 변경 의심</b>으로 묶어 보여줍니다. (재입사·계열사 이동 등)</li>
       <li>열이 3개 이상이어도 앞의 두 열(사번, 성명)만 사용합니다. 개인정보 최소화를 위해 부서·연락처 등은 복사하지 않는 것을 권장합니다.</li>
-      <li>"엑셀용 복사" 후 엑셀에 바로 붙여넣으면 표 형태로 들어갑니다.</li>
+      <li>"엑셀용 복사" 후 엑셀에 바로 붙여넣으면 표 형태로 들어갑니다. "인쇄 / PDF 저장"은 모든 결과를 한 문서로 출력합니다.</li>
     </ul>
   </details>
+
+  <div id="printArea"></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -134,6 +187,7 @@ details summary{cursor:pointer}
 (function(){
   const $ = id => document.getElementById(id);
   const hasDigit = s => /\d/.test(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
   function splitLine(raw){
     let parts;
@@ -172,105 +226,219 @@ details summary{cursor:pointer}
     return {map, dups, bad};
   }
 
+  // ① 기준 명단 (여러 개)
+  function addPrev(label, text){
+    const n = $('prevLists').children.length + 1;
+    const el = document.createElement('div');
+    el.className = 'plist';
+    el.innerHTML = `<div class="plist-head"><input type="text" class="plabel" placeholder="명단 이름 (예: 1분기, 상반기)" aria-label="기준 명단 이름"><button class="rm">삭제</button></div>
+      <textarea class="ptext" spellcheck="false" placeholder="사번&#9;성명&#10;10231&#9;홍길동&#10;10232&#9;김철수"></textarea><div class="count"></div>`;
+    el.querySelector('.plabel').value = label || `기준 ${n}`;
+    el.querySelector('.ptext').value = text || '';
+    el.querySelector('.ptext').addEventListener('input', updateCounts);
+    el.querySelector('.plabel').addEventListener('input', () => { if(current) compare(true); });
+    el.querySelector('.rm').onclick = () => { el.remove(); refreshRm(); updateCounts(); if(current) compare(true); };
+    $('prevLists').appendChild(el);
+    refreshRm(); updateCounts();
+    return el;
+  }
+  function refreshRm(){
+    const items = [...$('prevLists').children];
+    items.forEach(el => el.querySelector('.rm').style.display = items.length > 1 ? '' : 'none');
+  }
+  const prevs = () => [...$('prevLists').children].map((el, i) => ({
+    el, label: el.querySelector('.plabel').value.trim() || `기준 ${i+1}`, text: el.querySelector('.ptext').value
+  }));
+
   let current = null, view = 'new';
   const VIEWS = {
-    new:  {cls:'s-new',  label:'신규 추가', title:'신규 추가 인원', desc:'② 비교 명단에만 있는 인원입니다. 이전에 수강 이력이 없으므로 이번 교육 대상에 포함되었는지 확인하세요.'},
-    miss: {cls:'s-miss', label:'누락', title:'누락 인원', desc:'① 기준 명단에는 있으나 ② 비교 명단에 없는 인원입니다. 퇴사·전출·휴직 여부 또는 명단 누락을 확인하세요.'},
-    name: {cls:'s-warn', label:'성명 불일치', title:'성명 불일치', desc:'사번은 같지만 성명이 다릅니다. 오타 또는 사번 입력 오류일 수 있습니다.'},
-    err:  {cls:'s-warn', label:'중복·형식 오류', title:'중복 및 형식 오류', desc:'같은 명단 안에 사번이 중복되었거나, 사번·성명을 인식하지 못한 줄입니다.'},
-    same: {cls:'s-same', label:'일치', title:'일치 인원', desc:'두 명단에 모두 있고 성명도 같은 인원입니다.'}
+    new:   {cls:'s-new',  label:'신규 추가', unit:'명', title:'신규 추가 인원', cols:['사번','성명'],
+            desc:'② 비교 명단에만 있는 인원입니다. 기준 명단에 수강 이력이 없으므로 이번 교육 대상에 포함되었는지 확인하세요.'},
+    miss:  {cls:'s-miss', label:'누락', unit:'명', title:'누락 인원', cols:['사번','성명','기준 명단'],
+            desc:'기준 명단에는 있으나 ② 비교 명단에 없는 인원입니다. 퇴사·전출·휴직 여부 또는 명단 누락을 확인하세요.'},
+    idchg: {cls:'s-chg',  label:'사번 변경 의심', unit:'명', title:'사번 변경 의심', cols:['성명','기준 사번','현재 사번','기준 명단','비고'],
+            desc:'성명은 같은데 사번이 다른 누락·신규 인원입니다. 재입사·계열사 이동 등으로 사번이 바뀐 동일인인지 확인하세요. 다른 사람이면 신규·누락으로 처리하세요.'},
+    name:  {cls:'s-warn', label:'성명 불일치', unit:'명', title:'성명 불일치', cols:['사번','기준 성명','현재 성명','기준 명단'],
+            desc:'사번은 같지만 성명이 다릅니다. 오타 또는 사번 입력 오류일 수 있습니다.'},
+    err:   {cls:'s-warn', label:'중복·형식 오류', unit:'건', title:'중복 및 형식 오류', cols:['명단','줄','유형','내용'],
+            desc:'같은 명단 안에 사번이 중복되었거나, 사번·성명을 인식하지 못한 줄입니다.'},
+    same:  {cls:'s-same', label:'일치', unit:'명', title:'일치 인원 (기존 수강 확인)', cols:['사번','성명','기준 명단'],
+            desc:'기준 명단과 ② 비교 명단에 모두 있고 성명도 같은 인원입니다.'}
   };
 
-  function compare(){
+  function compare(keepView){
     const z = $('optZero').checked;
-    const A = parse($('prev').value, z), B = parse($('curr').value, z);
-    if(A.map.size === 0 && B.map.size === 0){ toast('명단을 붙여넣어 주세요.'); return; }
-    const r = {new:[], miss:[], name:[], err:[], same:[]};
+    const lists = prevs();
+    const B = parse($('curr').value, z);
+    const A = new Map();
+    const r = {new:[], miss:[], idchg:[], name:[], err:[], same:[]};
+    lists.forEach(L => {
+      const P = parse(L.text, z);
+      P.map.forEach((v,k) => {
+        const a = A.get(k);
+        if(a){ if(!a.sources.includes(L.label)) a.sources.push(L.label); }
+        else A.set(k, {...v, sources:[L.label]});
+      });
+      P.dups.forEach(d => r.err.push([`① ${L.label}`, d.line, '사번 중복', `${d.id} ${d.name} (먼저 나온 성명: ${d.other})`]));
+      P.bad.forEach(b => r.err.push([`① ${L.label}`, b.line, '형식 오류', b.raw]));
+    });
+    B.dups.forEach(d => r.err.push(['② 비교 명단', d.line, '사번 중복', `${d.id} ${d.name} (먼저 나온 성명: ${d.other})`]));
+    B.bad.forEach(b => r.err.push(['② 비교 명단', b.line, '형식 오류', b.raw]));
+    if(A.size === 0 && B.map.size === 0){ toast('명단을 붙여넣어 주세요.'); return; }
+
+    const src = a => a.sources.join('·');
+    const nw = [], ms = [];
     B.map.forEach((v,k) => {
-      const a = A.map.get(k);
-      if(!a) r.new.push([v.id, v.name]);
-      else if(normName(a.name) !== normName(v.name)) r.name.push([v.id, a.name, v.name]);
-      else r.same.push([v.id, v.name]);
+      const a = A.get(k);
+      if(!a) nw.push(v);
+      else if(normName(a.name) !== normName(v.name)) r.name.push([v.id, a.name, v.name, src(a)]);
+      else r.same.push([v.id, v.name, src(a)]);
     });
-    A.map.forEach((v,k) => { if(!B.map.has(k)) r.miss.push([v.id, v.name]); });
-    [['①',A],['②',B]].forEach(([tag,P]) => {
-      P.dups.forEach(d => r.err.push([tag, d.line, '사번 중복', `${d.id} ${d.name} (먼저 나온 성명: ${d.other})`]));
-      P.bad.forEach(b => r.err.push([tag, b.line, '형식 오류', b.raw]));
+    A.forEach((v,k) => { if(!B.map.has(k)) ms.push(v); });
+
+    // 사번 변경 의심: 성명이 같은 누락·신규 인원을 짝지음
+    const group = arr => { const g = new Map(); arr.forEach(x => { const n = normName(x.name); if(!g.has(n)) g.set(n, []); g.get(n).push(x); }); return g; };
+    const gM = group(ms), used = new Set();
+    group(nw).forEach((ns, n) => {
+      const mm = gM.get(n); if(!mm) return;
+      const note = (ns.length > 1 || mm.length > 1) ? '동명이인 있음 · 직접 확인' : '';
+      for(let i = 0; i < Math.min(ns.length, mm.length); i++){
+        r.idchg.push([ns[i].name, mm[i].id, ns[i].id, src(mm[i]), note]);
+        used.add(ns[i]); used.add(mm[i]);
+      }
     });
-    const byId = (x,y) => String(x[0]).localeCompare(String(y[0]), 'ko', {numeric:true});
-    ['new','miss','name','same'].forEach(k => r[k].sort(byId));
-    current = r;
-    view = r.new.length ? 'new' : r.miss.length ? 'miss' : r.name.length ? 'name' : r.err.length ? 'err' : 'same';
+    r.new = nw.filter(x => !used.has(x)).map(x => [x.id, x.name]);
+    r.miss = ms.filter(x => !used.has(x)).map(x => [x.id, x.name, src(x)]);
+
+    const byFirst = (x,y) => String(x[0]).localeCompare(String(y[0]), 'ko', {numeric:true});
+    ['new','miss','idchg','name','same'].forEach(k => r[k].sort(byFirst));
+    current = {r, labels: lists.map(L => L.label), total: B.map.size, date: new Date()};
+    if(!keepView) view = ['new','miss','idchg','name','err'].find(k => r[k].length) || 'same';
     render();
-    $('result').style.display = 'block';
-    $('result').scrollIntoView({behavior:'smooth', block:'start'});
+    if(!keepView){
+      $('result').style.display = 'block';
+      $('result').scrollIntoView({behavior:'smooth', block:'start'});
+    }
   }
 
-  function columns(k){
-    if(k === 'name') return ['사번','① 성명','② 성명'];
-    if(k === 'err') return ['명단','줄','유형','내용'];
-    return ['사번','성명'];
+  function headline(){
+    const co = $('company').value.trim(), edu = $('eduName').value.trim(), per = $('eduPeriod').value.trim();
+    const what = edu ? (per ? `${edu}(${per})` : edu) : (per ? `${per} 법정교육` : '법정교육');
+    return (co ? `[${co}] ` : '') + what;
+  }
+
+  function reportText(){
+    const {r, labels, total} = current;
+    const parts = [`기존 수강 확인 ${r.same.length}명`, `신규 ${r.new.length}명`];
+    if(r.idchg.length) parts.push(`사번 변경 의심 ${r.idchg.length}명`);
+    if(r.name.length) parts.push(`성명 불일치 ${r.name.length}명`);
+    let s = `${headline()} 대상자 명단 검증 결과, 대상 ${total}명 중 ${parts.join(', ')}입니다.`;
+    s += r.miss.length
+      ? ` 기준 명단(${labels.join('·')}) 대비 이번 명단에서 빠진 인원은 ${r.miss.length}명으로, 퇴사·전출·휴직 여부 확인이 필요합니다.`
+      : ` 기준 명단(${labels.join('·')}) 대비 누락 인원은 없습니다.`;
+    if(r.idchg.length || r.name.length) s += ' 사번 변경 의심·성명 불일치 인원은 동일인 여부 확인이 필요합니다.';
+    if(r.err.length) s += ` 명단 중복·형식 오류 ${r.err.length}건은 정리가 필요합니다.`;
+    return s;
+  }
+
+  const fmtDate = d => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+
+  function tableHtml(cols, rows, cls){
+    return `<table${cls ? ` class="${cls}"` : ''}><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>` +
+      (rows.length ? rows.map(row => `<tr>${row.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')
+                   : `<tr><td class="empty" colspan="${cols.length}">해당 인원이 없습니다 ✓</td></tr>`) + '</tbody></table>';
   }
 
   function render(){
-    const r = current;
+    const {r} = current;
+    $('report').textContent = reportText();
     $('summary').innerHTML = Object.entries(VIEWS).map(([k,v]) =>
       `<div class="stat ${v.cls}${k===view?' on':''}" data-k="${k}"><b>${r[k].length}</b><span>${v.label}</span></div>`).join('');
     $('summary').querySelectorAll('.stat').forEach(el => el.onclick = () => { view = el.dataset.k; render(); });
-    $('pTitle').textContent = `${VIEWS[view].title} (${r[view].length}명)`.replace('명)', view==='err'?'건)':'명)');
-    $('pDesc').textContent = VIEWS[view].desc;
-    const cols = columns(view), rows = r[view];
-    const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    $('tbl').innerHTML = `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>` +
-      (rows.length ? rows.map(row => `<tr>${row.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')
-                   : `<tr><td class="empty" colspan="${cols.length}">해당 인원이 없습니다 ✓</td></tr>`) + '</tbody>';
+    const V = VIEWS[view];
+    $('pTitle').textContent = `${V.title} (${r[view].length}${V.unit})`;
+    $('pDesc').textContent = V.desc;
+    $('tbl').innerHTML = tableHtml(V.cols, r[view]).replace(/^<table>|<\/table>$/g, '');
+    buildPrint();
   }
 
-  function tsv(){ return [columns(view), ...current[view]].map(r => r.join('\t')).join('\r\n'); }
+  function buildPrint(){
+    const {r, labels, date} = current;
+    const meta = [['회사명', $('company').value.trim()], ['교육명', $('eduName').value.trim()], ['기간·차수', $('eduPeriod').value.trim()],
+                  ['기준 명단', labels.join(', ')], ['검증일', fmtDate(date)]].filter(m => m[1]);
+    $('printArea').innerHTML = `<h1>법정교육 대상자 명단 검증 결과</h1>
+      <table class="pmeta">${meta.map(m => `<tr><td>${m[0]}</td><td>${esc(m[1])}</td></tr>`).join('')}</table>
+      <div class="preport">${esc(reportText())}</div>` +
+      ['new','miss','idchg','name','err','same'].map(k => {
+        const V = VIEWS[k];
+        return `<section><h2>${V.title} (${r[k].length}${V.unit})</h2>` +
+          (r[k].length ? tableHtml(V.cols, r[k], 'ptbl') : '<p class="pnone">해당 없음</p>') + '</section>';
+      }).join('');
+  }
 
-  $('copy').onclick = async () => {
-    if(!current) return;
-    try { await navigator.clipboard.writeText(tsv()); }
+  async function copyText(text, msg){
+    try { await navigator.clipboard.writeText(text); }
     catch(e){
-      const t = document.createElement('textarea'); t.value = tsv(); document.body.appendChild(t);
+      const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
       t.select(); document.execCommand('copy'); t.remove();
     }
-    toast('복사했습니다. 엑셀에 붙여넣으세요.');
-  };
+    toast(msg);
+  }
+
+  const rowsOf = () => [VIEWS[view].cols, ...current.r[view]];
+  $('copy').onclick = () => { if(current) copyText(rowsOf().map(r => r.join('\t')).join('\r\n'), '복사했습니다. 엑셀에 붙여넣으세요.'); };
+  $('copyReport').onclick = () => { if(current) copyText(reportText(), '요약 문구를 복사했습니다.'); };
+  $('print').onclick = () => { if(current){ buildPrint(); window.print(); } };
 
   $('csv').onclick = () => {
     if(!current) return;
     const q = v => /[",\r\n]/.test(v) ? `"${String(v).replace(/"/g,'""')}"` : v;
-    const body = [columns(view), ...current[view]].map(r => r.map(q).join(',')).join('\r\n');
+    const body = rowsOf().map(r => r.map(q).join(',')).join('\r\n');
     const blob = new Blob(['﻿' + body], {type:'text/csv;charset=utf-8'});
     const a = document.createElement('a');
-    const d = new Date(), ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    a.href = URL.createObjectURL(blob); a.download = `명단검증_${VIEWS[view].label.replace(/[·\s]/g,'')}_${ds}.csv`;
+    a.href = URL.createObjectURL(blob);
+    a.download = `명단검증_${VIEWS[view].label.replace(/[·\s]/g,'')}_${fmtDate(new Date()).replace(/\./g,'')}.csv`;
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
 
-  function updateCounts(){
-    const z = $('optZero').checked;
-    [['prev','prevCount'],['curr','currCount']].forEach(([t,c]) => {
-      const P = parse($(t).value, z);
-      const extra = (P.dups.length ? ` · 중복 ${P.dups.length}` : '') + (P.bad.length ? ` · 인식 불가 ${P.bad.length}줄` : '');
-      $(c).textContent = $(t).value.trim() ? `인식된 인원 ${P.map.size}명${extra}` : '';
-    });
+  function countText(text){
+    const P = parse(text, $('optZero').checked);
+    const extra = (P.dups.length ? ` · 중복 ${P.dups.length}` : '') + (P.bad.length ? ` · 인식 불가 ${P.bad.length}줄` : '');
+    return text.trim() ? `인식된 인원 ${P.map.size}명${extra}` : '';
   }
-  ['prev','curr'].forEach(id => $(id).addEventListener('input', updateCounts));
-  $('optZero').onchange = () => { updateCounts(); if(current) compare(); };
+  function updateCounts(){
+    prevs().forEach(L => L.el.querySelector('.count').textContent = countText(L.text));
+    $('currCount').textContent = countText($('curr').value);
+  }
+  $('curr').addEventListener('input', updateCounts);
+  $('optZero').onchange = () => { updateCounts(); if(current) compare(true); };
+  ['company','eduName','eduPeriod'].forEach(id => $(id).addEventListener('input', () => { if(current) render(); }));
 
-  $('run').onclick = compare;
-  $('swap').onclick = () => { const t = $('prev').value; $('prev').value = $('curr').value; $('curr').value = t; updateCounts(); if(current) compare(); };
-  $('clear').onclick = () => { $('prev').value = ''; $('curr').value = ''; current = null; $('result').style.display = 'none'; updateCounts(); };
+  $('addPrev').onclick = () => addPrev().querySelector('.ptext').focus();
+  $('run').onclick = () => compare(false);
+  $('swap').onclick = () => {
+    const t = $('prevLists').firstElementChild.querySelector('.ptext');
+    const v = t.value; t.value = $('curr').value; $('curr').value = v;
+    updateCounts(); if(current) compare(true);
+  };
+  $('clear').onclick = () => {
+    $('prevLists').innerHTML = ''; addPrev();
+    $('curr').value = ''; current = null; $('result').style.display = 'none'; $('printArea').innerHTML = ''; updateCounts();
+  };
   $('sample').onclick = () => {
-    $('prev').value = '사번\t성명\n010231\t홍길동\n10232\t김철수\n10233\t이영희\n10234\t박민수\n10235\t최지우';
-    $('curr').value = '10231-홍길동\n10232 김철수\n10233,이영히\n10235\t최지우\n10236\t정하늘\n10237\t강바다\n10237\t강바다';
+    $('prevLists').innerHTML = '';
+    addPrev('1분기', '사번\t성명\n010231\t홍길동\n10232\t김철수\n10233\t이영희');
+    addPrev('2분기', '10234\t박민수\n10235\t최지우\n10238\t윤서준\n10232\t김철수');
+    $('curr').value = '10231-홍길동\n10232 김철수\n10233,이영히\n10235\t최지우\n10236\t정하늘\n10237\t강바다\n10237\t강바다\n20238\t윤서준';
+    if(!$('eduName').value) $('eduName').value = '직장 내 성희롱 예방교육';
+    if(!$('eduPeriod').value) $('eduPeriod').value = '2026년 하반기';
     updateCounts();
   };
 
   let tt;
   function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800); }
+
+  addPrev();
 })();
 </script>
 </body>
