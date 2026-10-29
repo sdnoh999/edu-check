@@ -112,7 +112,7 @@ details summary{cursor:pointer}
 <body>
 <div class="wrap">
   <h1>법정교육 명단 검증</h1>
-  <p class="sub">엑셀에서 <b>사번 · 성명</b> 두 열만 복사해 붙여넣으면, 이전 명단과 현재 명단의 차이를 자동으로 찾아줍니다.</p>
+  <p class="sub">엑셀에서 <b>사번 · 성명</b>(필요하면 부서·직급까지) 열을 복사해 붙여넣으면, 이전 명단과 현재 명단의 차이를 자동으로 찾아줍니다.</p>
   <div class="notice">🔒 입력한 명단은 <b>이 브라우저 안에서만</b> 처리됩니다. 서버로 전송되거나 저장되지 않으며, 창을 닫으면 사라집니다.</div>
 
   <div class="card mb">
@@ -174,7 +174,8 @@ details summary{cursor:pointer}
       <li>첫 줄이 "사번 / 성명" 같은 머리글이면 자동으로 건너뜁니다.</li>
       <li>사번을 기준으로 비교합니다. 같은 사번인데 이름이 다르면 <b>성명 불일치</b>로 따로 표시합니다.</li>
       <li>사번은 다르지만 이름이 같은 누락·신규 인원은 <b>사번 변경 의심</b>으로 묶어 보여줍니다. (재입사·계열사 이동 등)</li>
-      <li>열이 3개 이상이어도 앞의 두 열(사번, 성명)만 사용합니다. 개인정보 최소화를 위해 부서·연락처 등은 복사하지 않는 것을 권장합니다.</li>
+      <li>사번·성명 뒤에 부서·직급 등 열을 더 붙여넣으면 결과에도 함께 표시됩니다. 머리글 줄(예: 사번 / 성명 / 부서 / 직급)을 같이 복사하면 그 이름이 열 제목이 됩니다.</li>
+      <li>비교는 사번·성명으로만 합니다. 개인정보 최소화를 위해 연락처·주민번호 등은 넣지 마세요.</li>
       <li>"엑셀용 복사" 후 엑셀에 바로 붙여넣으면 표 형태로 들어갑니다. "인쇄 / PDF 저장"은 모든 결과를 한 문서로 출력합니다.</li>
     </ul>
   </details>
@@ -195,7 +196,7 @@ details summary{cursor:pointer}
     else if(/[,;|]/.test(raw)) parts = raw.split(/[,;|]/).map(s=>s.trim()).filter(Boolean);
     else {
       const m = raw.match(/^(\S+?)\s*[-–:\/]\s*(.+)$/) || raw.match(/^(\S+)\s+(.+)$/);
-      parts = m ? [m[1], m[2]] : [raw];
+      parts = m ? [m[1], ...m[2].trim().split(/\s+/)] : [raw];
     }
     return parts;
   }
@@ -208,22 +209,31 @@ details summary{cursor:pointer}
   const normName = n => String(n).replace(/\s+/g,'');
 
   function parse(text, stripZero){
-    const map = new Map(), dups = [], bad = [];
-    let header = false;
+    const map = new Map(), dups = [], bad = [], exNames = [];
+    let header = false, headNames = [];
     text.split(/\r?\n/).forEach((line, i) => {
       const raw = line.trim();
       if(!raw) return;
       let p = splitLine(raw);
-      if(p.length >= 2 && !hasDigit(p[0]) && hasDigit(p[1])) p = [p[1], p[0]]; // 성명-사번 순서
+      if(p.length >= 2 && !hasDigit(p[0]) && hasDigit(p[1])) p = [p[1], p[0], ...p.slice(2)]; // 성명-사번 순서
       if(p.length < 2 || !hasDigit(p[0])){
-        if(!header && map.size === 0 && bad.length === 0 && /사번|성명|이름|번호|id/i.test(raw)){ header = true; return; }
+        if(!header && map.size === 0 && bad.length === 0 && /사번|성명|이름|번호|id/i.test(raw)){
+          header = true; headNames = p.slice(2); return;
+        }
         bad.push({line:i+1, raw}); return;
       }
+      // 사번·성명 뒤의 열(부서·직급 등)은 머리글 이름으로 보관
+      const ex = {};
+      p.slice(2).forEach((v, j) => {
+        const n = headNames[j] || `추가 정보 ${j+1}`;
+        if(!exNames.includes(n)) exNames.push(n);
+        ex[n] = v;
+      });
       const id = p[0].trim(), name = p[1].trim(), key = normId(id, stripZero);
       if(map.has(key)) dups.push({id, name, other: map.get(key).name, line:i+1});
-      else map.set(key, {id, name, line:i+1});
+      else map.set(key, {id, name, ex, line:i+1});
     });
-    return {map, dups, bad};
+    return {map, dups, bad, exNames};
   }
 
   // ① 기준 명단 (여러 개)
@@ -252,19 +262,22 @@ details summary{cursor:pointer}
 
   let current = null, view = 'new';
   const VIEWS = {
-    new:   {cls:'s-new',  label:'신규 추가', unit:'명', title:'신규 추가 인원', cols:['사번','성명'],
+    // at: 부서·직급 등 추가 열을 끼워 넣을 위치
+    new:   {cls:'s-new',  label:'신규 추가', unit:'명', title:'신규 추가 인원', cols:['사번','성명'], at:2,
             desc:'② 비교 명단에만 있는 인원입니다. 기준 명단에 수강 이력이 없으므로 이번 교육 대상에 포함되었는지 확인하세요.'},
-    miss:  {cls:'s-miss', label:'누락', unit:'명', title:'누락 인원', cols:['사번','성명','기준 명단'],
+    miss:  {cls:'s-miss', label:'누락', unit:'명', title:'누락 인원', cols:['사번','성명','기준 명단'], at:2,
             desc:'기준 명단에는 있으나 ② 비교 명단에 없는 인원입니다. 퇴사·전출·휴직 여부 또는 명단 누락을 확인하세요.'},
-    idchg: {cls:'s-chg',  label:'사번 변경 의심', unit:'명', title:'사번 변경 의심', cols:['성명','기준 사번','현재 사번','기준 명단','비고'],
+    idchg: {cls:'s-chg',  label:'사번 변경 의심', unit:'명', title:'사번 변경 의심', cols:['성명','기준 사번','현재 사번','기준 명단','비고'], at:3,
             desc:'성명은 같은데 사번이 다른 누락·신규 인원입니다. 재입사·계열사 이동 등으로 사번이 바뀐 동일인인지 확인하세요. 다른 사람이면 신규·누락으로 처리하세요.'},
-    name:  {cls:'s-warn', label:'성명 불일치', unit:'명', title:'성명 불일치', cols:['사번','기준 성명','현재 성명','기준 명단'],
+    name:  {cls:'s-warn', label:'성명 불일치', unit:'명', title:'성명 불일치', cols:['사번','기준 성명','현재 성명','기준 명단'], at:3,
             desc:'사번은 같지만 성명이 다릅니다. 오타 또는 사번 입력 오류일 수 있습니다.'},
     err:   {cls:'s-warn', label:'중복·형식 오류', unit:'건', title:'중복 및 형식 오류', cols:['명단','줄','유형','내용'],
             desc:'같은 명단 안에 사번이 중복되었거나, 사번·성명을 인식하지 못한 줄입니다.'},
-    same:  {cls:'s-same', label:'일치', unit:'명', title:'일치 인원 (기존 수강 확인)', cols:['사번','성명','기준 명단'],
+    same:  {cls:'s-same', label:'일치', unit:'명', title:'일치 인원 (기존 수강 확인)', cols:['사번','성명','기준 명단'], at:2,
             desc:'기준 명단과 ② 비교 명단에 모두 있고 성명도 같은 인원입니다.'}
   };
+  const withEx = (k, row, vals) => VIEWS[k].at == null ? row : [...row.slice(0, VIEWS[k].at), ...vals, ...row.slice(VIEWS[k].at)];
+  const colsOf = k => withEx(k, VIEWS[k].cols, current.exNames);
 
   function compare(keepView){
     const z = $('optZero').checked;
@@ -272,12 +285,17 @@ details summary{cursor:pointer}
     const B = parse($('curr').value, z);
     const A = new Map();
     const r = {new:[], miss:[], idchg:[], name:[], err:[], same:[]};
+    const exNames = [...B.exNames];
     lists.forEach(L => {
       const P = parse(L.text, z);
+      P.exNames.forEach(n => { if(!exNames.includes(n)) exNames.push(n); });
       P.map.forEach((v,k) => {
         const a = A.get(k);
-        if(a){ if(!a.sources.includes(L.label)) a.sources.push(L.label); }
-        else A.set(k, {...v, sources:[L.label]});
+        if(a){
+          if(!a.sources.includes(L.label)) a.sources.push(L.label);
+          Object.entries(v.ex).forEach(([n, val]) => { if(!a.ex[n]) a.ex[n] = val; });
+        }
+        else A.set(k, {...v, ex:{...v.ex}, sources:[L.label]});
       });
       P.dups.forEach(d => r.err.push([`① ${L.label}`, d.line, '사번 중복', `${d.id} ${d.name} (먼저 나온 성명: ${d.other})`]));
       P.bad.forEach(b => r.err.push([`① ${L.label}`, b.line, '형식 오류', b.raw]));
@@ -287,12 +305,14 @@ details summary{cursor:pointer}
     if(A.size === 0 && B.map.size === 0){ toast('명단을 붙여넣어 주세요.'); return; }
 
     const src = a => a.sources.join('·');
+    // 추가 열 값: ② 비교 명단 값을 우선하고, 비어 있으면 기준 명단 값 사용
+    const exv = (...recs) => exNames.map(n => { const f = recs.find(x => x && x.ex[n]); return f ? f.ex[n] : ''; });
     const nw = [], ms = [];
     B.map.forEach((v,k) => {
       const a = A.get(k);
       if(!a) nw.push(v);
-      else if(normName(a.name) !== normName(v.name)) r.name.push([v.id, a.name, v.name, src(a)]);
-      else r.same.push([v.id, v.name, src(a)]);
+      else if(normName(a.name) !== normName(v.name)) r.name.push(withEx('name', [v.id, a.name, v.name, src(a)], exv(v, a)));
+      else r.same.push(withEx('same', [v.id, v.name, src(a)], exv(v, a)));
     });
     A.forEach((v,k) => { if(!B.map.has(k)) ms.push(v); });
 
@@ -303,16 +323,16 @@ details summary{cursor:pointer}
       const mm = gM.get(n); if(!mm) return;
       const note = (ns.length > 1 || mm.length > 1) ? '동명이인 있음 · 직접 확인' : '';
       for(let i = 0; i < Math.min(ns.length, mm.length); i++){
-        r.idchg.push([ns[i].name, mm[i].id, ns[i].id, src(mm[i]), note]);
+        r.idchg.push(withEx('idchg', [ns[i].name, mm[i].id, ns[i].id, src(mm[i]), note], exv(ns[i], mm[i])));
         used.add(ns[i]); used.add(mm[i]);
       }
     });
-    r.new = nw.filter(x => !used.has(x)).map(x => [x.id, x.name]);
-    r.miss = ms.filter(x => !used.has(x)).map(x => [x.id, x.name, src(x)]);
+    r.new = nw.filter(x => !used.has(x)).map(x => withEx('new', [x.id, x.name], exv(x)));
+    r.miss = ms.filter(x => !used.has(x)).map(x => withEx('miss', [x.id, x.name, src(x)], exv(x)));
 
     const byFirst = (x,y) => String(x[0]).localeCompare(String(y[0]), 'ko', {numeric:true});
     ['new','miss','idchg','name','same'].forEach(k => r[k].sort(byFirst));
-    current = {r, labels: lists.map(L => L.label), total: B.map.size, date: new Date()};
+    current = {r, exNames, labels: lists.map(L => L.label), total: B.map.size, date: new Date()};
     if(!keepView) view = ['new','miss','idchg','name','err'].find(k => r[k].length) || 'same';
     render();
     if(!keepView){
@@ -358,7 +378,7 @@ details summary{cursor:pointer}
     const V = VIEWS[view];
     $('pTitle').textContent = `${V.title} (${r[view].length}${V.unit})`;
     $('pDesc').textContent = V.desc;
-    $('tbl').innerHTML = tableHtml(V.cols, r[view]).replace(/^<table>|<\/table>$/g, '');
+    $('tbl').innerHTML = tableHtml(colsOf(view), r[view]).replace(/^<table>|<\/table>$/g, '');
     buildPrint();
   }
 
@@ -372,7 +392,7 @@ details summary{cursor:pointer}
       ['new','miss','idchg','name','err','same'].map(k => {
         const V = VIEWS[k];
         return `<section><h2>${V.title} (${r[k].length}${V.unit})</h2>` +
-          (r[k].length ? tableHtml(V.cols, r[k], 'ptbl') : '<p class="pnone">해당 없음</p>') + '</section>';
+          (r[k].length ? tableHtml(colsOf(k), r[k], 'ptbl') : '<p class="pnone">해당 없음</p>') + '</section>';
       }).join('');
   }
 
@@ -385,7 +405,7 @@ details summary{cursor:pointer}
     toast(msg);
   }
 
-  const rowsOf = () => [VIEWS[view].cols, ...current.r[view]];
+  const rowsOf = () => [colsOf(view), ...current.r[view]];
   $('copy').onclick = () => { if(current) copyText(rowsOf().map(r => r.join('\t')).join('\r\n'), '복사했습니다. 엑셀에 붙여넣으세요.'); };
   $('copyReport').onclick = () => { if(current) copyText(reportText(), '요약 문구를 복사했습니다.'); };
   $('print').onclick = () => { if(current){ buildPrint(); window.print(); } };
@@ -427,9 +447,9 @@ details summary{cursor:pointer}
   };
   $('sample').onclick = () => {
     $('prevLists').innerHTML = '';
-    addPrev('1분기', '사번\t성명\n010231\t홍길동\n10232\t김철수\n10233\t이영희');
-    addPrev('2분기', '10234\t박민수\n10235\t최지우\n10238\t윤서준\n10232\t김철수');
-    $('curr').value = '10231-홍길동\n10232 김철수\n10233,이영히\n10235\t최지우\n10236\t정하늘\n10237\t강바다\n10237\t강바다\n20238\t윤서준';
+    addPrev('1분기', '사번\t성명\t부서\t직급\n010231\t홍길동\t인사팀\t대리\n10232\t김철수\t생산팀\t과장\n10233\t이영희\t영업팀\t사원');
+    addPrev('2분기', '사번\t성명\t부서\t직급\n10234\t박민수\t생산팀\t대리\n10235\t최지우\t품질팀\t차장\n10238\t윤서준\t영업팀\t사원\n10232\t김철수\t생산팀\t과장');
+    $('curr').value = '사번\t성명\t부서\t직급\n10231-홍길동 인사팀 대리\n10232 김철수 생산팀 과장\n10233,이영히,영업팀,사원\n10235\t최지우\t품질팀\t차장\n10236\t정하늘\t생산팀\t사원\n10237\t강바다\t물류팀\t대리\n10237\t강바다\t물류팀\t대리\n20238\t윤서준\t영업팀\t주임';
     if(!$('eduName').value) $('eduName').value = '직장 내 성희롱 예방교육';
     if(!$('eduPeriod').value) $('eduPeriod').value = '2026년 하반기';
     updateCounts();
